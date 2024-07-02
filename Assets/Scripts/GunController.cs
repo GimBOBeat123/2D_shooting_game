@@ -2,31 +2,44 @@ using UnityEngine;
 
 public class GunController : MonoBehaviour
 {
-    public Camera cam; // ¸ŞÀÎ Ä«¸Ş¶ó ÂüÁ¶
-    public Transform character; // Ä³¸¯ÅÍ Transform (ºÎ¸ğ)
+    public Camera cam; // ë©”ì¸ ì¹´ë©”ë¼ ì°¸ì¡°
+    public Transform character; // ìºë¦­í„° Transform (ë¶€ëª¨)
 
     void Update()
     {
-        // Ä³¸¯ÅÍÀÇ ¹æÇâ º¤ÅÍ¸¦ °è»êÇÕ´Ï´Ù.
+        // ìºë¦­í„°ì˜ ë°©í–¥ ë²¡í„°ë¥¼ ê³„ì‚°í•©ë‹ˆë‹¤.
         Vector3 characterDir = character.right;
 
-        // ¸¶¿ì½º À§Ä¡¸¦ ¿ùµå ÁÂÇ¥·Î º¯È¯ÇÕ´Ï´Ù.
+        // ë§ˆìš°ìŠ¤ ìœ„ì¹˜ë¥¼ ì›”ë“œ ì¢Œí‘œë¡œ ë³€í™˜í•©ë‹ˆë‹¤.
         Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0f;
 
-        // ÃÑÀÇ À§Ä¡¸¦ ¼³Á¤ÇÕ´Ï´Ù.
+        // ì´ì˜ ìœ„ì¹˜ë¥¼ ì„¤ì •í•©ë‹ˆë‹¤.
         Vector3 gunPos = transform.position;
 
-        // ÃÑÀÇ ¹æÇâ º¤ÅÍ¸¦ °è»êÇÕ´Ï´Ù.
+        // ì´ì˜ ë°©í–¥ ë²¡í„°ë¥¼ ê³„ì‚°í•©ë‹ˆë‹¤.
         Vector3 direction = mousePos - gunPos;
 
-        // Ä³¸¯ÅÍÀÇ ¹æÇâ°ú ÃÑÀÇ ¹æÇâ »çÀÌÀÇ È¸Àü °¢µµ¸¦ °è»êÇÕ´Ï´Ù.
+        // ìºë¦­í„°ì˜ ë°©í–¥ê³¼ ì´ì˜ ë°©í–¥ ì‚¬ì´ì˜ íšŒì „ ê°ë„ë¥¼ ê³„ì‚°í•©ë‹ˆë‹¤.
         float angle = Vector3.SignedAngle(characterDir, direction, Vector3.forward);
 
-        // ÃÑÀÇ È¸Àü ¼³Á¤
+        // ì´ì˜ íšŒì „ ì„¤ì •
         transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle));
 
-        // ÃÑÀ» Ä³¸¯ÅÍÀÇ ÀÚ½Ä °´Ã¼·Î ¼³Á¤
+        // ì´ì„ ìºë¦­í„°ì˜ ìì‹ ê°ì²´ë¡œ ì„¤ì •
         transform.SetParent(character);
     }
 }
+
+//float angle;
+//Vector2 target, mouse;
+//private void Start()
+//{
+//    target = transform.position;
+//}
+//private void Update()
+//{
+//    mouse = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+//            angle = Mathf.Atan2(mouse.y - target.y, mouse.x - target.x) * Mathf.Rad2Deg;
+//            this.transform.rotation = Quaternion.AngleAxis(angle - 90, Vector3.forward);
+//}
