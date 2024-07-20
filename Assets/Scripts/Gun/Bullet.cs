@@ -1,41 +1,46 @@
 using UnityEngine;
 
-public class Bullet : MonoBehaviour
+public class Bullet : MonoBehaviour // 총알 이동 및 충돌 처리 담당
 {
-    public float speed = 10f; // 총알 속도
+    [SerializeField] private float speed = 10f; // 총알 속도
+    [SerializeField] private float damage = 10f; // 총알의 데미지
     private Vector3 shootDirection; // 총알 발사 방향
-
-    public void Init(Vector3 direction)
-    {
-        shootDirection = direction;
-    }
 
     void Update()
     {
         // 총알을 발사 방향으로 이동시킴
         transform.Translate(shootDirection * speed * Time.deltaTime, Space.World);
-
-        //// 화면을 벗어나면 총알 제거
-        //if (!IsVisibleOnScreen())
-        //{
-        //    Destroy(gameObject);
-
-        //}
     }
 
-    void OnTriggerEnter2D(Collider2D other)
+    public void Initialize(Vector3 direction, float bulletSpeed)
     {
-        // 총알이 다른 객체와 충돌하면 제거
-        Destroy(gameObject);
-
+        shootDirection = direction;
+        speed = bulletSpeed; // 발사 속도를 총알의 속도로 설정
     }
 
-    //bool IsVisibleOnScreen()
-    //{
-    //    // 총알이 화면 안에 있는지 체크
-    //    Vector3 screenPos = Camera.main.WorldToScreenPoint(transform.position);
-    //    return (screenPos.x > 0 && screenPos.x < Screen.width && screenPos.y > 0 && screenPos.y < Screen.height);
-    //}
+    private void Start()
+    {
+        // 총알 초기화
+        Destroy(gameObject, 2f); // 일정 시간(예: 2초) 후에 자동으로 제거
+    }
 
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        // 충돌한 객체의 레이어 또는 태그가 "Boss" 또는 "Wall"이면 총알을 제거
+        if (other.CompareTag("Wall") || other.gameObject.layer == LayerMask.NameToLayer("Boss"))
+        {
+            if (other.CompareTag("Boss") || other.gameObject.layer == LayerMask.NameToLayer("Boss"))
+            {
+                // 보스가 총알과 충돌했을 때, BossController를 가져와서 데미지를 적용
+                BossController boss = other.GetComponent<BossController>();
+                if (boss != null)
+                {                   
+                    boss.TakeDamage(damage); // 데미지 적용
 
+                }
+            }
+
+            Destroy(gameObject); // 총알 제거
+        }
+    }
 }

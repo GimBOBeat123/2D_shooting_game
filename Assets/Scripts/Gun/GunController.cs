@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class GunController : MonoBehaviour
+public class GunController : MonoBehaviour // 총알 발사 담당
 {
     [SerializeField] private Transform weapon; // 무기 Transform
     [SerializeField] private Transform character; // 캐릭터 Transform
@@ -46,18 +46,19 @@ public class GunController : MonoBehaviour
 
     void Shoot()
     {
-        // 총알을 발사할 방향 계산 (마우스 위치 기준)
-        Vector3 shootDirection = (Camera.main.ScreenToWorldPoint(Input.mousePosition) - shootPoint.position).normalized;
-
         // 랜덤 총알 프리팹 선택
         GameObject selectedBulletPrefab = bulletPrefabs[Random.Range(0, bulletPrefabs.Length)];
 
         // 총알 발사
         GameObject bullet = Instantiate(selectedBulletPrefab, shootPoint.position, Quaternion.identity);
-        Rigidbody2D rb = bullet.GetComponent<Rigidbody2D>();
-        if (rb != null)
+        Bullet bulletScript = bullet.GetComponent<Bullet>();
+        if (bulletScript != null)
         {
-            rb.velocity = shootDirection * shootForce; // 총알에 발사 속도 적용
+            // 총알 발사 방향 및 속도 설정
+            Vector3 shootDirection = (Camera.main.ScreenToWorldPoint(Input.mousePosition) - shootPoint.position);
+            shootDirection.z = 0f; // z축 값을 0으로 설정하여 2D 평면에서만 사용
+
+            bulletScript.Initialize(shootDirection.normalized, shootForce); // 방향과 속도를 전달
         }
     }
 }
