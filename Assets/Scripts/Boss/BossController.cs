@@ -1,5 +1,8 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.SceneManagement; // SceneManager를 사용하기 위한 네임스페이스
+using UnityEngine.UI;
+using TMPro;
 
 public class BossController : MonoBehaviour
 {
@@ -7,8 +10,12 @@ public class BossController : MonoBehaviour
     [SerializeField] public float speed = 2f; // 보스의 이동 속도
     [SerializeField] public float followDistance = 10f; // 보스가 캐릭터를 추격하는 최대 거리
     [SerializeField] public float stopDistance = 5f; // 보스가 캐릭터와 일정 거리 이상일 때 이동을 멈추는 거리
-    [SerializeField] public float health = 100f; // 보스 몬스터의 체력
     [SerializeField] public float deathAnimationDuration = 1f; // Death 애니메이션의 지속 시간 (초)
+
+    [SerializeField] public float health = 100f; // 보스 몬스터의 체력
+    [SerializeField] public float maxHealth = 100f; // 보스 몬스터의 최대 체력
+    [SerializeField] public Image healthBar; // 체력 바 이미지
+    [SerializeField] public TextMeshProUGUI heatlhText; // 체력 숫자 표시
 
     private Animator animator;
     private Rigidbody2D rb;
@@ -22,10 +29,12 @@ public class BossController : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        rb.bodyType = RigidbodyType2D.Kinematic;
         animator = GetComponent<Animator>();
         bossShooting = GetComponent<BossShooting>(); // BossShooting 컴포넌트를 가져옴
 
         StartCoroutine(AttackRoutine()); // 공격 코루틴 시작
+        UpdateHealthBar();
     }
 
     void Update()
@@ -69,6 +78,8 @@ public class BossController : MonoBehaviour
         if (isDead) return;
 
         health -= amount;
+        UpdateHealthBar(); // 체력 감소 Ui 업데이트
+
         if (health <= 0)
         {
             StartCoroutine(Die());
@@ -86,6 +97,21 @@ public class BossController : MonoBehaviour
                 StartCoroutine(Attack());
                 yield return new WaitForSeconds(1f);
             }
+        }
+    }
+
+    private void UpdateHealthBar()
+    {
+        if (healthBar != null)
+        {
+            // 체력바의 Fill Amount를 체력에 맞게 업데이트
+            healthBar.fillAmount = Mathf.Clamp01(health / maxHealth);
+        }
+
+        if (heatlhText != null)
+        {
+            // 체력 텍스트를 현재 체력에 맞게 업데이트
+            heatlhText.text = $"{Mathf.CeilToInt(health)} / {Mathf.CeilToInt(maxHealth)}";
         }
     }
 
@@ -115,7 +141,7 @@ public class BossController : MonoBehaviour
                 break;
             case 3:
                 animator.Play("Attack2");
-                // 패턴4: HomingPattern 사용
+                // 패턴4: RandomSpreadPattern 사용
                 StartCoroutine(bossShooting.RandomSpreadPattern());
                 break;
         }
@@ -126,14 +152,14 @@ public class BossController : MonoBehaviour
         animator.SetBool("isAttacking", false);
     }
 
-
     private IEnumerator Die()
     {
         isDead = true;
         animator.SetTrigger("Death");
 
-        yield return new WaitForSeconds(deathAnimationDuration);
+        yield return new WaitForSeconds(3f);
 
-        Destroy(gameObject);
+        // Start 씬으로 전환
+        SceneManager.LoadScene("Start"); // 씬 이름을 "Start"로 설정
     }
 }

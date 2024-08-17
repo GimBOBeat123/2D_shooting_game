@@ -3,7 +3,7 @@ using UnityEngine;
 public class Bullet : MonoBehaviour // 총알 이동 및 충돌 처리 담당
 {
     [SerializeField] private float speed = 10f; // 총알 속도
-    [SerializeField] private float damage = 10f; // 총알의 데미지
+    [SerializeField] public float damage = 10f; // 총알의 데미지
     private Vector3 shootDirection; // 총알 발사 방향
 
     void Update()
