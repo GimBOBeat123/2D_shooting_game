@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class Bullet : MonoBehaviour // 총알 이동 및 충돌 처리 담당
+public class Bullet : MonoBehaviour
 {
     [SerializeField] private float speed = 10f; // 총알 속도
     [SerializeField] public float damage = 10f; // 총알의 데미지
@@ -34,13 +34,17 @@ public class Bullet : MonoBehaviour // 총알 이동 및 충돌 처리 담당
                 // 보스가 총알과 충돌했을 때, BossController를 가져와서 데미지를 적용
                 BossController boss = other.GetComponent<BossController>();
                 if (boss != null)
-                {                   
+                {
                     boss.TakeDamage(damage); // 데미지 적용
-
                 }
             }
 
             Destroy(gameObject); // 총알 제거
         }
+    }
+
+    public void SetDamageMultiplier(float multiplier)
+    {
+        damage *= multiplier; // 데미지 배율 적용
     }
 }

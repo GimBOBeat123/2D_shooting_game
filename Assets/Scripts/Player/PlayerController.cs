@@ -1,70 +1,142 @@
 using UnityEngine;
-using UnityEngine.SceneManagement; // SceneManager 사용을 위한 네임스페이스
 using System.Collections;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
     public float speed = 5f;
-    public float health = 100f; // 플레이어의 체력
+    public float health = 100f;
     public float maxHealth = 100f;
+
     public Image[] HealthBar;
+    public Image healCooldownImage; // 체력 회복 스킬 쿨타임 UI
+    public Image speedBoostCooldownImage; // 이동 속도 증가 스킬 쿨타임 UI
+
     private Rigidbody2D rb;
     private Vector2 movement;
     private Animator animator;
-    private bool isDead = false; // 플레이어가 죽었는지 확인하는 플래그
+    private bool isDead = false;
 
-    void Start()
+    private bool isHealReady = true;
+    private bool isSpeedBoostReady = true;
+
+    public float healAmount = 20f;
+    public float healCooldown = 10f;
+    public float speedBoostMultiplier = 2f;
+    public float speedBoostDuration = 5f;
+    public float speedBoostCooldown = 15f;
+
+    private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         UpdateHealthUI();
+        // 초기 색상 설정
+        SetCooldownImageAlpha(healCooldownImage, 1f);
+        SetCooldownImageAlpha(speedBoostCooldownImage, 1f);
     }
 
-    void Update()
+    private void Update()
     {
-        if (isDead) return; // 플레이어가 죽었으면 이동 및 애니메이션 제어를 무시합니다.
+        if (isDead) return;
 
-        // Input 받기
         movement.x = Input.GetAxis("Horizontal");
         movement.y = Input.GetAxis("Vertical");
 
-        // 애니메이션 제어
         if (movement.magnitude > 0)
         {
-            animator.SetFloat("Speed", 1f); // Speed 파라미터 설정
+            animator.SetFloat("Speed", 1f);
         }
         else
         {
             animator.SetFloat("Speed", 0);
         }
 
-        // 캐릭터 방향 전환
         if (movement.x < 0)
         {
-            transform.localScale = new Vector3(-1, 1, 1); // 좌측
+            transform.localScale = new Vector3(-1, 1, 1);
         }
         else if (movement.x > 0)
         {
-            transform.localScale = new Vector3(1, 1, 1); // 우측
+            transform.localScale = new Vector3(1, 1, 1);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Q) && isHealReady)
+        {
+            StartCoroutine(ActivateHeal());
+        }
+
+        if (Input.GetKeyDown(KeyCode.E) && isSpeedBoostReady)
+        {
+            StartCoroutine(ActivateSpeedBoost());
         }
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
         if (isDead)
         {
-            rb.velocity = Vector2.zero; // 플레이어가 죽었으면 물리적 움직임을 차단합니다.
-            return; // FixedUpdate에서 더 이상 이동하지 않도록 합니다.
+            rb.velocity = Vector2.zero;
+            return;
         }
 
-        // 물리적 이동
         rb.velocity = movement * speed;
+    }
+
+    private IEnumerator ActivateHeal()
+    {
+        isHealReady = false;
+        HealPlayer();
+        yield return StartCoroutine(CooldownRoutine(healCooldown, healCooldownImage));
+        isHealReady = true;
+    }
+
+    private void HealPlayer()
+    {
+        health = Mathf.Min(maxHealth, health + healAmount);
+        UpdateHealthUI();
+    }
+
+    private IEnumerator ActivateSpeedBoost()
+    {
+        isSpeedBoostReady = false;
+        float originalSpeed = speed;
+        speed *= speedBoostMultiplier;
+
+        yield return new WaitForSeconds(speedBoostDuration);
+
+        speed = originalSpeed;
+        yield return StartCoroutine(CooldownRoutine(speedBoostCooldown, speedBoostCooldownImage));
+        isSpeedBoostReady = true;
+    }
+
+    private IEnumerator CooldownRoutine(float cooldownTime, Image cooldownImage)
+    {
+        float elapsed = 0f;
+        SetCooldownImageAlpha(cooldownImage, 0.5f); // 쿨타임 동안 반투명
+
+        while (elapsed < cooldownTime)
+        {
+            elapsed += Time.deltaTime;
+            cooldownImage.fillAmount = Mathf.Clamp01(1 - (elapsed / cooldownTime));
+            yield return null;
+        }
+
+        cooldownImage.fillAmount = 1f;
+        SetCooldownImageAlpha(cooldownImage, 1f); // 쿨타임 종료 후 완전히 보이게
+    }
+
+    private void SetCooldownImageAlpha(Image image, float alpha)
+    {
+        Color color = image.color;
+        color.a = alpha;
+        image.color = color;
     }
 
     public void TakeDamage(float amount)
     {
-        if (isDead) return; // 플레이어가 죽었으면 피해를 무시합니다.
+        if (isDead) return;
 
         health -= amount;
         if (health <= 0)
@@ -80,7 +152,6 @@ public class PlayerController : MonoBehaviour
     public void UpdateHealthUI()
     {
         float fillAmount = Mathf.Clamp01(health / maxHealth);
-
         foreach (var healthBar in HealthBar)
         {
             healthBar.fillAmount = fillAmount;
@@ -89,21 +160,16 @@ public class PlayerController : MonoBehaviour
 
     private void Die()
     {
-        if (isDead) return; // 이미 죽었으면 처리하지 않음
+        if (isDead) return;
 
-        isDead = true; // 플레이어 상태를 죽음으로 변경
-        animator.SetTrigger("Die"); // Die 애니메이션 트리거
-
-        // 애니메이션 재생 후 씬을 다시 로드합니다.
+        isDead = true;
+        animator.SetTrigger("Die");
         StartCoroutine(DieAndReloadScene());
     }
 
     private IEnumerator DieAndReloadScene()
     {
-        // Death 애니메이션 재생 시간 동안 대기
-        yield return new WaitForSeconds(3f); // 애니메이션의 길이에 맞게 조정
-
-        // 현재 씬을 다시 로드하여 Start 씬으로 돌아갑니다.
-        SceneManager.LoadScene("Start"); // 씬 이름을 "Start"로 설정
+        yield return new WaitForSeconds(3f);
+        SceneManager.LoadScene("Start");
     }
 }
